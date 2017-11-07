@@ -3,9 +3,8 @@
 
 #define MAXSIZE 1000
 
-void str_cat(char *, char *);
+int strend(char *, char *);
 int getchars(char *s, int max);
-
 
 int main(void) {
 
@@ -17,18 +16,26 @@ int main(void) {
     printf("input string t: \n");
     while (getchars(t, MAXSIZE) == 0);
 
-    str_cat(s, t);
-    printf("cat: %s\n", s);
+    printf("strend returns %d\n", strend(s, t));
 
     free(s);
     free(t);
     return 0;
 }
 
-void str_cat(char *s, char *t) {
-    while (*s++);
-    s--;
-    while((*s++ = *t++));
+int strend(char *s, char *t) {
+    int ls = 0, lt = 0;
+    while (*s) {
+        ls++;
+        s++;
+    }
+    while (*t) {
+        lt++;
+        t++;
+    }
+    while (ls-- && lt-- && (*--s == *--t));
+    if (lt > 0 ) return 0;
+    return 1;
 }
 
 
