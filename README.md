@@ -1,1 +1,1 @@
-c/c++ examples
+c/c++ exercises
