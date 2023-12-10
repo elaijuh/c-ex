@@ -14,5 +14,5 @@ $(OUT): $(OFILES)
 all: $(OUT)
 
 clean:
-	@rm -f a.out
+	@rm -rf a.out*
 	@rm -f $(OFILES) $(OUT)
