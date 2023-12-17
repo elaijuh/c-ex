@@ -1,3 +1,4 @@
+// 2023-12-17
 #undef NULL
 #define NULL 0
 #define EOF (-1)
@@ -38,3 +39,4 @@ int _flushbuf(int, FILE *);
 FILE *fopen(char *, char *);
 int fflush(FILE *);
 int fclose(FILE *);
+int fseek(FILE *, long, int);

@@ -1,3 +1,4 @@
+// 2023-12-17
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -71,19 +72,19 @@ int _flushbuf(int x, FILE *fp)
 {
 	int bufsize;
 
-	if ((fp->flag & (_WRITE | _EOF | _ERR)) != _WRITE)
+	if ((fp->flag & (_WRITE | _ERR)) != _WRITE)
 		return EOF;
 	bufsize = (fp->flag & _UNBUF) ? 1 : BUFSIZ;
 	if (fp->base == NULL) {
 		if ((fp->base = (char *)malloc(bufsize)) == NULL)
 			return EOF;
-		fp->ptr = fp->base;
 		fp->cnt = bufsize;
 	} else {
-		fp->ptr = fp->base;
-		fp->cnt = write(fp->fd, fp->ptr, bufsize);
+		fp->cnt = write(fp->fd, fp->base, bufsize);
 	}
+	fp->ptr = fp->base;
 	if (--fp->cnt != bufsize - 1) {
+		fp->flag |= _ERR;
 		fp->cnt = 0;
 		return EOF;
 	}
@@ -94,21 +95,49 @@ int _flushbuf(int x, FILE *fp)
 int fflush(FILE *fp)
 {
 	int cnt;
-	cnt = write(fp->fd, fp->base, fp->cnt);
-	if (cnt != fp->cnt)
+	int bufsize;
+	if ((fp->flag & (_WRITE | _ERR)) != _WRITE)
 		return EOF;
+	bufsize = (fp->flag & _UNBUF) ? 1 : BUFSIZ;
+	if (fp->base == NULL) {
+		if ((fp->base = (char *)malloc(bufsize)) == NULL)
+			return EOF;
+		fp->cnt = bufsize;
+	} else {
+		cnt = write(fp->fd, fp->base, bufsize - fp->cnt);
+		if (cnt != bufsize - fp->cnt) {
+			fp->flag |= _ERR;
+			fp->cnt = 0;
+			return EOF;
+		}
+	}
 	fp->ptr = fp->base;
-	fp->cnt = fp->flag & _UNBUF ? 1 : BUFSIZ;
+	fp->cnt = bufsize;
 	return 0;
 }
 
 int fclose(FILE *fp)
 {
 	free(fp->base);
+	close(fp->fd);
+
 	fp->fd = -1;
 	fp->cnt = 0;
 	fp->base = NULL;
 	fp->ptr = NULL;
 	fp->flag = _EOF;
+	return 0;
+}
+
+int fseek(FILE *fp, long offset, int origin)
+{
+	if (fp->flag & _ERR)
+		return EOF;
+	if (lseek(fp->fd, offset, origin) < 0)
+		return -1;
+	if (fp->flag & _READ) { // EOF -> READ
+		fp->flag = _READ;
+		fp->cnt = 0;
+	}
 	return 0;
 }
